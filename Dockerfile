@@ -83,7 +83,7 @@ RUN ln -s $HOME/tachyon/vendors/circom/bazel-bin/prover_main /usr/local/bin/prov
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
-WORKDIR /root
+WORKDIR /prover
 
 # Copy Rust source code and build the project
 COPY Cargo.* ./

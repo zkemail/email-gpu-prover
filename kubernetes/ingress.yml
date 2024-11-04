@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: managed-cert-ingress-k8s-gpu-prover
+  namespace: sdk
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: k8s-gpu-prover
+    networking.gke.io/managed-certificates: managed-cert-k8s-gpu-prover
+    ingressClassName: "gce"
+spec:
+  rules:
+    - host: prover.zk.email
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: k8s-gpu-prover-svc
+                port:
+                  number: 443

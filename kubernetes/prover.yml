@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prover-pvc
+  namespace: sdk
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-gpu-prover
+  namespace: sdk
+  labels:
+    app: prover
+spec:
+  selector:
+    matchLabels:
+      app: prover
+  template:
+    metadata:
+      labels:
+        app: prover
+    spec:
+      nodeSelector:
+        cloud.google.com/gke-accelerator: nvidia-tesla-t4
+        cloud.google.com/gke-accelerator-count: "1"
+      containers:
+        - name: prover
+          image: bisht13/email-gpu-prover:latest
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - secretRef:
+                name: k8s-gpu-prover-secret
+          livenessProbe:
+            httpGet:
+              path: /api/healthz
+              port: 3000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/healthz
+              port: 3000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          volumeMounts:
+            - name: prover-pvc
+              mountPath: /prover
+          resources:
+            requests:
+              cpu: 2
+              memory: 8Gi
+            limits:
+              nvidia.com/gpu: 1
+      volumes:
+        - name: prover-pvc
+          persistentVolumeClaim:
+            claimName: prover-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: k8s-gpu-prover-svc
+  namespace: sdk
+spec:
+  selector:
+    app: prover
+  ports:
+    - protocol: TCP
+      port: 443
+      targetPort: 3000
+  type: ClusterIP
