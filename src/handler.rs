@@ -46,41 +46,48 @@ pub async fn health_checker_handler() -> impl IntoResponse {
 pub async fn prove_and_push_handler(
     Json(payload): Json<ProveAndPushRequest>,
 ) -> Result<impl IntoResponse, ProveError> {
+    let proof_path = format!("artifacts/{}", payload.blueprint_id);
     // Create an artifact folder if it doesn't exist
-    std::fs::create_dir_all(&payload.blueprint_id)?;
+    std::fs::create_dir_all(&proof_path)?;
 
     download_from_url(
         &payload.input_download_url,
-        &format!("{}/input.json", payload.blueprint_id),
+        &format!("{}/input.json", proof_path),
     )
     .await
     .map_err(ProveError::DownloadInputError)?;
 
     download_from_url(
         &payload.keys_download_url,
-        &format!("{}/keys.zip", payload.blueprint_id),
+        &format!("{}/keys.zip", proof_path),
     )
     .await
     .map_err(ProveError::DownloadKeysError)?;
 
     download_from_url(
         &payload.compiled_circuit_download_url,
-        &format!("{}/compiled_circuit.zip", payload.blueprint_id),
+        &format!("{}/compiled_circuit.zip", proof_path),
     )
     .await
     .map_err(ProveError::DownloadCircuitError)?;
 
-    prove(&payload.blueprint_id)
+    prove(&proof_path)
         .await
         .map_err(ProveError::GenerateProofError)?;
 
-    upload_to_url(&payload.proof_upload_url, "artifacts/proof.json")
-        .await
-        .map_err(ProveError::UploadProofError)?;
+    upload_to_url(
+        &payload.proof_upload_url,
+        &format!("{}/proof.json", proof_path),
+    )
+    .await
+    .map_err(ProveError::UploadProofError)?;
 
-    upload_to_url(&payload.public_upload_url, "artifacts/public.json")
-        .await
-        .map_err(ProveError::UploadPublicError)?;
+    upload_to_url(
+        &payload.public_upload_url,
+        &format!("{}/public.json", proof_path),
+    )
+    .await
+    .map_err(ProveError::UploadPublicError)?;
 
     Ok(Json(serde_json::json!({
         "status": "success",
@@ -91,35 +98,36 @@ pub async fn prove_and_push_handler(
 pub async fn prove_handler(
     Json(payload): Json<ProveRequest>,
 ) -> Result<impl IntoResponse, ProveError> {
+    let proof_path = format!("artifacts/{}", payload.blueprint_id);
     // Create an artifact folder if it doesn't exist
-    std::fs::create_dir_all(&payload.blueprint_id)?;
+    std::fs::create_dir_all(&proof_path)?;
 
     // Write the input to a file
-    let input_file = format!("{}/input.json", payload.blueprint_id);
+    let input_file = format!("{}/input.json", proof_path);
     std::fs::write(&input_file, serde_json::to_string(&payload.input)?)?;
 
     download_from_url(
         &payload.keys_download_url,
-        &format!("{}/keys.zip", payload.blueprint_id),
+        &format!("{}/keys.zip", proof_path),
     )
     .await
     .map_err(ProveError::DownloadKeysError)?;
 
     download_from_url(
         &payload.compiled_circuit_download_url,
-        &format!("{}/compiled_circuit.zip", payload.blueprint_id),
+        &format!("{}/compiled_circuit.zip", proof_path),
     )
     .await
     .map_err(ProveError::DownloadCircuitError)?;
 
-    prove(&payload.blueprint_id)
+    prove(&proof_path)
         .await
         .map_err(ProveError::GenerateProofError)?;
 
     let (proof, public) =
-        read_proof_and_public_data(&payload.blueprint_id).map_err(ProveError::ReadProofError)?;
+        read_proof_and_public_data(&proof_path).map_err(ProveError::ReadProofError)?;
 
-    clean_up(&payload.blueprint_id).map_err(ProveError::CleanUpError)?;
+    clean_up(&proof_path).map_err(ProveError::CleanUpError)?;
 
     Ok(Json(ProveResponse {
         proof,

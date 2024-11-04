@@ -7,9 +7,9 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use axum::http::{
-        header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
-        Method,
-    };
+    header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
+    Method,
+};
 use dotenv::dotenv;
 use relayer_utils::LOG;
 use server::create_router;
@@ -22,6 +22,8 @@ async fn main() -> Result<()> {
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
     let api_key = Arc::new(std::env::var("API_KEY").expect("API_KEY must be set"));
+
+    std::fs::create_dir_all("artifacts")?;
 
     let cors = CorsLayer::new()
         .allow_origin(tower_http::cors::Any)
