@@ -9,6 +9,7 @@ use crate::{
 };
 
 #[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct ProveAndPushRequest {
     pub blueprint_id: String,
     pub input_download_url: String,
@@ -19,6 +20,7 @@ pub struct ProveAndPushRequest {
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct ProveRequest {
     pub blueprint_id: String,
     pub input: Value,
@@ -27,6 +29,7 @@ pub struct ProveRequest {
 }
 
 #[derive(Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct ProveResponse {
     pub proof: Proof,
     pub public_outputs: PublicOutputs,
