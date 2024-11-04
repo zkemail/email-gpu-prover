@@ -1,6 +1,7 @@
 use axum::{response::IntoResponse, Json};
 use sdk_utils::{download_from_url, upload_to_url};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::{
     errors::ProveError,
@@ -20,7 +21,7 @@ pub struct ProveAndPushRequest {
 #[derive(Deserialize, Debug)]
 pub struct ProveRequest {
     pub blueprint_id: String,
-    pub input_download_url: String,
+    pub input: Value,
     pub keys_download_url: String,
     pub compiled_circuit_download_url: String,
 }
@@ -93,12 +94,9 @@ pub async fn prove_handler(
     // Create an artifact folder if it doesn't exist
     std::fs::create_dir_all(&payload.blueprint_id)?;
 
-    download_from_url(
-        &payload.input_download_url,
-        &format!("{}/input.json", payload.blueprint_id),
-    )
-    .await
-    .map_err(ProveError::DownloadInputError)?;
+    // Write the input to a file
+    let input_file = format!("{}/input.json", payload.blueprint_id);
+    std::fs::write(&input_file, serde_json::to_string(&payload.input)?)?;
 
     download_from_url(
         &payload.keys_download_url,

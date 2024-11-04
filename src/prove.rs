@@ -35,7 +35,7 @@ pub async fn prove(artifacts_dir: &str) -> Result<()> {
     // Generate the proof
     info!(LOG, "Generating proof");
     run_command(
-        "prover_cuda",
+        "prover",
         &["circuit.zkey", "witness.wtns", "proof.json", "public.json"],
         Some(artifacts_dir),
     )

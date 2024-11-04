@@ -33,6 +33,9 @@ pub enum ProveError {
 
     #[error("Failed to delete directory: {0}")]
     CleanUpError(#[source] anyhow::Error),
+
+    #[error("Failed to parse JSON: {0}")]
+    JsonError(#[from] serde_json::Error),
 }
 
 impl IntoResponse for ProveError {
@@ -48,6 +51,7 @@ impl IntoResponse for ProveError {
             ProveError::UploadPublicError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ProveError::ReadProofError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ProveError::CleanUpError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            ProveError::JsonError(_) => StatusCode::BAD_REQUEST,
         };
 
         // Create a JSON body with the error message
