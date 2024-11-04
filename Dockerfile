@@ -1,12 +1,20 @@
-FROM nvidia/cuda:12.4.0-devel-ubuntu22.04
+# Start with NVIDIA CUDA base image
+FROM nvidia/cuda:12.6.0-devel-ubuntu22.04
 
-RUN apt-get update && apt-get upgrade -y 
+# Set the Python version
+ARG PYTHON_VERSION=3.10.12
 
-RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends \
-    cmake \
+# Set non-interactive mode for tzdata configuration
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Update and install base dependencies
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+    wget \
+    ca-certificates \
     build-essential \
     pkg-config \
+    cmake \
     libssl-dev \
     libgmp-dev \
     libffi-dev \
@@ -19,33 +27,71 @@ RUN apt-get update && \
     npm \
     curl \
     m4 \
-    wget \
     software-properties-common \
     unzip \
-    && rm -rf /var/lib/apt/lists/*
+    libbz2-dev \
+    liblzma-dev \
+    libncursesw5-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    tk-dev \
+    xz-utils \
+    zlib1g-dev \
+    libomp-dev \
+    tzdata && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN git clone https://github.com/Orbiter-Finance/rapidsnark.git rapidsnark
-WORKDIR /root/rapidsnark
-RUN yarn
-RUN git submodule init
-RUN git submodule update
-RUN ./build_gmp.sh host
-RUN mkdir build_prover
-WORKDIR /root/rapidsnark/build_prover
-RUN cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../package -DNVML_LIBRARY=/usr/local/cuda-12.4/targets/x86_64-linux/lib/stubs/libnvidia-ml.so
-RUN make -j$(nproc) && make install
-RUN chmod +x ../package/bin/prover_cuda
-RUN mv ../package/bin/prover_cuda /usr/local/bin/prover_cuda
+# Install Bazelisk
+RUN wget https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64 && \
+    chmod +x bazelisk-linux-amd64 && \
+    mv bazelisk-linux-amd64 /usr/local/bin/bazel
 
-# Install the rust
+# Set HOME environment variable
+ENV HOME /root
+
+# Install pyenv and Python
+RUN curl https://pyenv.run | bash && \
+    export PYENV_ROOT="$HOME/.pyenv" && \
+    export PATH="$PYENV_ROOT/bin:$PATH" && \
+    CONFIGURE_OPTS=--enable-shared pyenv install ${PYTHON_VERSION} && \
+    pyenv global ${PYTHON_VERSION} && \
+    pyenv rehash
+
+# Update PATH environment variable
+ENV PYENV_ROOT="$HOME/.pyenv"
+ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH"
+
+# Install pip and numpy
+RUN apt-get update && apt-get install -y --no-install-recommends python3-pip && \
+    pip3 install numpy
+
+# Clone tachyon repository
+RUN git clone https://github.com/kroma-network/tachyon.git /root/tachyon
+WORKDIR /root/tachyon
+
+# Add build:cuda --action_env=TACHYON_CUDA_COMPUTE_CAPABILITIES="compute_52" to .bazelc.user
+RUN echo "build:cuda --action_env=TACHYON_CUDA_COMPUTE_CAPABILITIES=\"compute_52\"" >> vendors/circom/.bazelrc
+
+# Build circom prover with CUDA acceleration
+RUN cd vendors/circom && \
+    TMP=/root CARGO_BAZEL_REPIN=true bazel build --@kroma_network_tachyon//:has_openmp --config maxopt --config cuda //:prover_main
+
+# Create a symlink to the circom prover in /usr/local/bin
+RUN ln -s $HOME/tachyon/vendors/circom/bazel-bin/prover_main /usr/local/bin/prover
+
+# Install Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 WORKDIR /root
 
-COPY Cargp.* ./
+# Copy Rust source code and build the project
+COPY Cargo.* ./
 COPY src ./src
-
 RUN cargo build
 
-CMD ["/bin/bash"]
+# Reset DEBIAN_FRONTEND to default value
+ENV DEBIAN_FRONTEND=
+
+# Set the default command to open a bash shell
+CMD ["cargo", "run"]
