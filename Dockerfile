@@ -28,7 +28,7 @@ RUN apt-get update && apt-get upgrade -y && \
     curl \
     m4 \
     software-properties-common \
-    unzip \
+    zip \
     libbz2-dev \
     liblzma-dev \
     libncursesw5-dev \
