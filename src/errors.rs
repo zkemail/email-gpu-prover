@@ -10,9 +10,6 @@ pub enum ProveError {
     #[error("Failed to create directory: {0}")]
     CreateDirError(#[from] std::io::Error),
 
-    #[error("Failed to download input: {0}")]
-    DownloadInputError(#[source] anyhow::Error),
-
     #[error("Failed to download keys: {0}")]
     DownloadKeysError(#[source] anyhow::Error),
 
@@ -21,12 +18,6 @@ pub enum ProveError {
 
     #[error("Failed to generate proof: {0}")]
     GenerateProofError(#[source] anyhow::Error),
-
-    #[error("Failed to upload proof: {0}")]
-    UploadProofError(#[source] anyhow::Error),
-
-    #[error("Failed to upload public data: {0}")]
-    UploadPublicError(#[source] anyhow::Error),
 
     #[error("Failed to read proof and public data: {0}")]
     ReadProofError(#[source] anyhow::Error),
@@ -43,12 +34,9 @@ impl IntoResponse for ProveError {
         // Map the error to an appropriate HTTP status code
         let status_code = match self {
             ProveError::CreateDirError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            ProveError::DownloadInputError(_) => StatusCode::BAD_REQUEST,
             ProveError::DownloadKeysError(_) => StatusCode::BAD_REQUEST,
             ProveError::DownloadCircuitError(_) => StatusCode::BAD_REQUEST,
             ProveError::GenerateProofError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            ProveError::UploadProofError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            ProveError::UploadPublicError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ProveError::ReadProofError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ProveError::CleanUpError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ProveError::JsonError(_) => StatusCode::BAD_REQUEST,

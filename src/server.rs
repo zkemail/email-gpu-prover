@@ -10,11 +10,10 @@ use axum::{
     Router,
 };
 
-use crate::handler::{health_checker_handler, prove_and_push_handler, prove_handler};
+use crate::handler::{health_checker_handler, prove_handler};
 
 pub fn create_router(api_key: Arc<String>) -> Router {
     let protected_routes = Router::new()
-        .route("/api/prove-and-push", post(prove_and_push_handler))
         .route("/api/prove", post(prove_handler))
         .route_layer(middleware::from_fn_with_state(
             api_key.clone(),
