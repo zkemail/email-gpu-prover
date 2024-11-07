@@ -21,25 +21,36 @@ pub async fn prove(artifacts_dir: &str) -> Result<()> {
 
     // Unzip compiled circuit into the artifacts folder
     info!(LOG, "Unzipping compiled circuit");
-    run_command(
+    if let Err(e) = run_command(
         "unzip",
         &["-o", "compiled_circuit.zip"],
         Some(artifacts_dir),
     )
-    .await?;
+    .await
+    {
+        info!(LOG, "Error unzipping compiled circuit: {:?}", e);
+        return Err(e);
+    }
 
     // Unzip keys files into the artifacts folder
     info!(LOG, "Unzipping keys");
-    run_command("unzip", &["-o", "keys.zip"], Some(artifacts_dir)).await?;
+    if let Err(e) = run_command("unzip", &["-o", "keys.zip"], Some(artifacts_dir)).await {
+        info!(LOG, "Error unzipping keys: {:?}", e);
+        return Err(e);
+    }
 
     // Generate witness
     info!(LOG, "Generating witness");
-    run_command(
+    if let Err(e) = run_command(
         "./circuit",
         &["input.json", "witness.wtns"],
         Some(artifacts_dir),
     )
-    .await?;
+    .await
+    {
+        info!(LOG, "Error generating witness: {:?}", e);
+        return Err(e);
+    }
 
     // Generate the proof
     info!(LOG, "Generating proof");
