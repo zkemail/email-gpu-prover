@@ -19,6 +19,8 @@ pub struct PublicOutputs {
 }
 
 pub async fn prove(artifacts_dir: &str) -> Result<()> {
+    info!(LOG, "artifacts_dir: {}", artifacts_dir);
+
     // Unzip keys files into the artifacts folder
     info!(LOG, "Unzipping keys");
     run_command("unzip", &["-o", "keys.zip"], Some(artifacts_dir)).await?;
