@@ -10,13 +10,11 @@ pub struct Proof {
     pub pi_b: Vec<Vec<String>>,
     pub pi_c: Vec<String>,
     pub protocol: String,
-    pub curve: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
-pub struct PublicOutputs {
-    pub outputs: Vec<String>,
-}
+#[serde(transparent)]
+pub struct PublicOutputs(pub Vec<String>);
 
 pub async fn prove(artifacts_dir: &str) -> Result<()> {
     info!(LOG, "artifacts_dir: {}", artifacts_dir);

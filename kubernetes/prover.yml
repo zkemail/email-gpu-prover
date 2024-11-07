@@ -27,13 +27,12 @@ spec:
       labels:
         app: prover
     spec:
-      runtimeClassName: nvidia
       nodeSelector:
         cloud.google.com/gke-accelerator: nvidia-tesla-t4
         cloud.google.com/gke-accelerator-count: "1"
       containers:
         - name: prover
-          image: bisht13/email-gpu-prover-9:latest
+          image: bisht13/email-gpu-prover-10:latest
           ports:
             - containerPort: 3000
           envFrom:
