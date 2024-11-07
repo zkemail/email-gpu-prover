@@ -1,5 +1,5 @@
 # Start with NVIDIA CUDA base image
-FROM nvidia/cuda:12.6.0-devel-ubuntu22.04
+FROM nvidia/cuda:12.2.0-devel-ubuntu22.04
 
 RUN apt-get update && apt-get upgrade -y 
 # Update the package list and install necessary dependencies
@@ -33,15 +33,15 @@ RUN apt-get update && \
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1 \
     && update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 
+WORKDIR /root
 RUN git clone https://github.com/Orbiter-Finance/rapidsnark.git rapidsnark
 WORKDIR /root/rapidsnark
-RUN yarn
 RUN git submodule init
 RUN git submodule update
 RUN ./build_gmp.sh host
 RUN mkdir build_prover
 WORKDIR /root/rapidsnark/build_prover
-RUN cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../package -DNVML_LIBRARY=/usr/local/cuda-12.6/targets/x86_64-linux/lib/stubs/libnvidia-ml.so
+RUN cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../package -DNVML_LIBRARY=/usr/local/cuda-12.2/targets/x86_64-linux/lib/stubs/libnvidia-ml.so
 RUN make -j$(nproc) && make install
 RUN chmod +x ../package/bin/prover_cuda
 
