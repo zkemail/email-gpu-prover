@@ -32,7 +32,7 @@ spec:
         cloud.google.com/gke-accelerator-count: "1"
       containers:
         - name: prover
-          image: bisht13/email-gpu-prover-7:latest
+          image: bisht13/email-gpu-prover-8:latest
           ports:
             - containerPort: 3000
           envFrom:
