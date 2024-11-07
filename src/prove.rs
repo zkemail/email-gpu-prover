@@ -21,10 +21,6 @@ pub struct PublicOutputs {
 pub async fn prove(artifacts_dir: &str) -> Result<()> {
     info!(LOG, "artifacts_dir: {}", artifacts_dir);
 
-    // Unzip keys files into the artifacts folder
-    info!(LOG, "Unzipping keys");
-    run_command("unzip", &["-o", "keys.zip"], Some(artifacts_dir)).await?;
-
     // Unzip compiled circuit into the artifacts folder
     info!(LOG, "Unzipping compiled circuit");
     run_command(
@@ -33,6 +29,10 @@ pub async fn prove(artifacts_dir: &str) -> Result<()> {
         Some(artifacts_dir),
     )
     .await?;
+
+    // Unzip keys files into the artifacts folder
+    info!(LOG, "Unzipping keys");
+    run_command("unzip", &["-o", "keys.zip"], Some(artifacts_dir)).await?;
 
     // Generate witness
     info!(LOG, "Generating witness");

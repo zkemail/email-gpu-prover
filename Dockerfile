@@ -29,6 +29,7 @@ RUN apt-get update && apt-get upgrade -y && \
     m4 \
     software-properties-common \
     zip \
+    unzip \
     libbz2-dev \
     liblzma-dev \
     libncursesw5-dev \
@@ -59,7 +60,7 @@ RUN curl https://pyenv.run | bash && \
 
 # Update PATH environment variable
 ENV PYENV_ROOT="$HOME/.pyenv"
-ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH"
+ENV PATH "$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH"
 
 # Install pip and numpy
 RUN apt-get update && apt-get install -y --no-install-recommends python3-pip && \
@@ -81,7 +82,7 @@ RUN ln -s $HOME/tachyon/vendors/circom/bazel-bin/prover_main /usr/local/bin/prov
 
 # Install Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
+ENV PATH "/root/.cargo/bin:${PATH}"
 
 WORKDIR /prover
 
