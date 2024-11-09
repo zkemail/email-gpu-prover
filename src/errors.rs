@@ -22,11 +22,14 @@ pub enum ProveError {
     #[error("Failed to read proof and public data: {0}")]
     ReadProofError(#[source] anyhow::Error),
 
-    #[error("Failed to delete directory: {0}")]
-    CleanUpError(#[source] anyhow::Error),
-
     #[error("Failed to parse JSON: {0}")]
     JsonError(#[from] serde_json::Error),
+
+    #[error("Failed to unzip compiled circuit: {0}")]
+    UnzipCircuitError(#[source] anyhow::Error),
+
+    #[error("Failed to unzip keys: {0}")]
+    UnzipKeysError(#[source] anyhow::Error),
 }
 
 impl IntoResponse for ProveError {
@@ -38,8 +41,9 @@ impl IntoResponse for ProveError {
             ProveError::DownloadCircuitError(_) => StatusCode::BAD_REQUEST,
             ProveError::GenerateProofError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ProveError::ReadProofError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            ProveError::CleanUpError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ProveError::JsonError(_) => StatusCode::BAD_REQUEST,
+            ProveError::UnzipCircuitError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            ProveError::UnzipKeysError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
         // Create a JSON body with the error message

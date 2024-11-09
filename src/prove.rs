@@ -16,28 +16,15 @@ pub struct Proof {
 #[serde(transparent)]
 pub struct PublicOutputs(pub Vec<String>);
 
-pub async fn prove(artifacts_dir: &str) -> Result<()> {
-    info!(LOG, "artifacts_dir: {}", artifacts_dir);
-
-    // Unzip compiled circuit into the artifacts folder
-    info!(LOG, "Unzipping compiled circuit");
-    run_command(
-        "unzip",
-        &["-o", "compiled_circuit.zip"],
-        Some(artifacts_dir),
-    )
-    .await?;
-
-    // Unzip keys files into the artifacts folder
-    info!(LOG, "Unzipping keys");
-    run_command("unzip", &["-o", "keys.zip"], Some(artifacts_dir)).await?;
+pub async fn prove(blueprint_path: &str) -> Result<()> {
+    info!(LOG, "blueprint_path: {}", blueprint_path);
 
     // Generate witness
     info!(LOG, "Generating witness");
     run_command(
         "./circuit",
         &["input.json", "witness.wtns"],
-        Some(artifacts_dir),
+        Some(blueprint_path),
     )
     .await?;
 
@@ -46,7 +33,7 @@ pub async fn prove(artifacts_dir: &str) -> Result<()> {
     run_command(
         "prover",
         &["circuit.zkey", "witness.wtns", "proof.json", "public.json"],
-        Some(artifacts_dir),
+        Some(blueprint_path),
     )
     .await?;
 
@@ -61,11 +48,4 @@ pub fn read_proof_and_public_data(artifacts_dir: &str) -> Result<(Proof, PublicO
     let public: PublicOutputs = serde_json::from_str(&public)?;
 
     Ok((proof, public))
-}
-
-pub fn clean_up(artifacts_dir: &str) -> Result<()> {
-    info!(LOG, "Cleaning up artifacts");
-    std::fs::remove_dir_all(artifacts_dir)?;
-
-    Ok(())
 }
