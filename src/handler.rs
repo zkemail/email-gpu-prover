@@ -12,7 +12,7 @@ use crate::{
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ProveRequest {
-    pub blueprint_id: String,
+    pub proof_id: String,
     pub input: Value,
     pub keys_download_url: String,
     pub compiled_circuit_download_url: String,
@@ -39,9 +39,9 @@ pub async fn health_checker_handler() -> impl IntoResponse {
 pub async fn prove_handler(
     Json(payload): Json<ProveRequest>,
 ) -> Result<impl IntoResponse, ProveError> {
-    info!(LOG, "Received request to prove a circuit"; "blueprint_id" => &payload.blueprint_id);
+    info!(LOG, "Received request to prove a circuit"; "proof_id" => &payload.proof_id);
 
-    let proof_path = format!("artifacts/{}", payload.blueprint_id);
+    let proof_path = format!("artifacts/{}", payload.proof_id);
     // Create an artifact folder if it doesn't exist
     std::fs::create_dir_all(&proof_path)?;
 
