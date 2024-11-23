@@ -30,6 +30,9 @@ pub enum ProveError {
 
     #[error("Failed to unzip keys: {0}")]
     UnzipKeysError(#[source] anyhow::Error),
+
+    #[error("Failed to clean up: {0}")]
+    Cleanup(#[source] anyhow::Error),
 }
 
 impl IntoResponse for ProveError {
@@ -44,6 +47,7 @@ impl IntoResponse for ProveError {
             ProveError::JsonError(_) => StatusCode::BAD_REQUEST,
             ProveError::UnzipCircuitError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ProveError::UnzipKeysError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            ProveError::Cleanup(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
         // Create a JSON body with the error message

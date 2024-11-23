@@ -7,12 +7,13 @@ use slog::info;
 
 use crate::{
     errors::ProveError,
-    prove::{prove, read_proof_and_public_data, Proof, PublicOutputs},
+    prove::{cleanup, prove, read_proof_and_public_data, Proof, PublicOutputs},
 };
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ProveRequest {
     pub blueprint_id: String,
+    pub proof_id: String,
     pub input: Value,
     pub keys_download_url: String,
     pub compiled_circuit_download_url: String,
@@ -81,21 +82,23 @@ pub async fn prove_handler(
     }
 
     // Write the input to a file
-    let input_file = format!("{}/input.json", blueprint_path);
+    let input_file = format!("{}/input_{}.json", blueprint_path, payload.proof_id);
     std::fs::write(&input_file, serde_json::to_string(&payload.input)?)?;
 
     info!(LOG, "Wrote input to file"; "path" => &input_file);
 
-    prove(&blueprint_path)
+    prove(&blueprint_path, &payload.proof_id)
         .await
         .map_err(ProveError::GenerateProofError)?;
 
     info!(LOG, "Generated proof");
 
-    let (proof, public) =
-        read_proof_and_public_data(&blueprint_path).map_err(ProveError::ReadProofError)?;
+    let (proof, public) = read_proof_and_public_data(&blueprint_path, &payload.proof_id)
+        .map_err(ProveError::ReadProofError)?;
 
     info!(LOG, "Read proof and public data");
+
+    cleanup(&blueprint_path, &payload.proof_id).map_err(ProveError::Cleanup)?;
 
     Ok(Json(ProveResponse {
         proof,
