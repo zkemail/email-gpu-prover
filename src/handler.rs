@@ -15,8 +15,8 @@ pub struct ProveRequest {
     pub blueprint_id: String,
     pub proof_id: String,
     pub input: Value,
-    pub keys_download_url: String,
-    pub compiled_circuit_download_url: String,
+    pub zkey_download_url: String,
+    pub circuit_cpp_download_url: String,
 }
 
 #[derive(Serialize, Debug)]
@@ -47,8 +47,8 @@ pub async fn prove_handler(
         std::fs::create_dir_all(&blueprint_path)?;
 
         download_from_url(
-            &payload.compiled_circuit_download_url,
-            &format!("{}/compiled_circuit.zip", blueprint_path),
+            &payload.circuit_cpp_download_url,
+            &format!("{}/circuit_cpp.zip", blueprint_path),
         )
         .await
         .map_err(ProveError::DownloadCircuitError)?;
@@ -56,8 +56,8 @@ pub async fn prove_handler(
         info!(LOG, "Downloaded compiled circuit");
 
         download_from_url(
-            &payload.keys_download_url,
-            &format!("{}/keys.zip", blueprint_path),
+            &payload.zkey_download_url,
+            &format!("{}/zkey.zip", blueprint_path),
         )
         .await
         .map_err(ProveError::DownloadKeysError)?;
@@ -66,17 +66,13 @@ pub async fn prove_handler(
 
         // Unzip compiled circuit into the artifacts folder
         info!(LOG, "Unzipping compiled circuit");
-        run_command(
-            "unzip",
-            &["-o", "compiled_circuit.zip"],
-            Some(&blueprint_path),
-        )
-        .await
-        .map_err(ProveError::UnzipCircuitError)?;
+        run_command("unzip", &["-o", "circuit_cpp.zip"], Some(&blueprint_path))
+            .await
+            .map_err(ProveError::UnzipCircuitError)?;
 
         // Unzip keys files into the artifacts folder
         info!(LOG, "Unzipping keys");
-        run_command("unzip", &["-o", "keys.zip"], Some(&blueprint_path))
+        run_command("unzip", &["-o", "zkey.zip"], Some(&blueprint_path))
             .await
             .map_err(ProveError::UnzipKeysError)?;
     }
