@@ -157,11 +157,110 @@ Generates a zero-knowledge proof for the provided input.
 
 ## Kubernetes Deployment
 
-The repository includes Kubernetes configuration files for deployment:
+The repository includes Kubernetes configuration files for GKE deployment. Follow these steps to deploy to your GKE cluster:
 
-```bash
-kubectl apply -f kubernetes/prover.yml
-```
+### Prerequisites
+
+- Google Kubernetes Engine (GKE) cluster with GPU node pools
+- kubectl configured with your cluster context
+- A static IP address reserved in Google Cloud
+- Domain DNS pointing to the static IP
+
+### Deployment Steps
+
+1. **Create the PersistentVolumeClaim:**
+   ```bash
+   kubectl apply -f - --context=your-gke-context <<EOF
+   apiVersion: v1
+   kind: PersistentVolumeClaim
+   metadata:
+     name: prover-pvc
+     namespace: sdk
+   spec:
+     accessModes:
+       - ReadWriteOnce
+     resources:
+       requests:
+         storage: 50Gi
+   EOF
+   ```
+
+2. **Create the Kubernetes Secret with API key:**
+   ```bash
+   kubectl create secret generic k8s-gpu-prover-secret \
+     --from-literal=API_KEY=your-api-key \
+     --namespace=sdk \
+     --context=your-gke-context
+   ```
+
+3. **Create the Service:**
+   ```bash
+   kubectl apply -f - --context=your-gke-context <<EOF
+   apiVersion: v1
+   kind: Service
+   metadata:
+     name: k8s-gpu-prover-svc
+     namespace: sdk
+   spec:
+     selector:
+       app: prover
+     ports:
+       - protocol: TCP
+         port: 443
+         targetPort: 3000
+     type: ClusterIP
+   EOF
+   ```
+
+4. **Apply the Kubernetes manifests in order:**
+   ```bash
+   # Apply managed certificate
+   kubectl apply -f kubernetes/managed-cert.yml --context=your-gke-context
+   
+   # Apply deployment
+   kubectl apply -f kubernetes/prover.yml --context=your-gke-context
+   
+   # Apply ingress
+   kubectl apply -f kubernetes/ingress.yml --context=your-gke-context
+   ```
+
+5. **Update deployment strategy for ReadWriteOnce volumes:**
+   ```bash
+   kubectl patch deployment k8s-gpu-prover -n sdk --context=your-gke-context \
+     --type='merge' -p '{"spec":{"strategy":{"type":"Recreate","rollingUpdate":null}}}'
+   ```
+
+### Verification
+
+1. **Check deployment status:**
+   ```bash
+   kubectl get pods -n sdk --context=your-gke-context -l app=prover
+   ```
+
+2. **Check managed certificate status:**
+   ```bash
+   kubectl get managedcertificate -n sdk --context=your-gke-context
+   ```
+
+3. **Check ingress IP:**
+   ```bash
+   kubectl get ingress -n sdk --context=your-gke-context
+   ```
+
+4. **Test the API:**
+   ```bash
+   curl -X POST https://your-domain.com/api/prove \
+     -H "x-api-key: your-api-key" \
+     -H "Content-Type: application/json" \
+     -d '{"blueprintId": "test", "proofId": "test"}'
+   ```
+
+### Important Notes
+
+- The deployment uses `Recreate` strategy due to ReadWriteOnce PVC constraints
+- Google managed certificates can take 10-60 minutes to provision
+- Ensure your domain DNS points to the static IP before certificate provisioning
+- The deployment requires GPU nodes with NVIDIA Tesla T4 or compatible GPUs
 
 ## Error Handling
 
